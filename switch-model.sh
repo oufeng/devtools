@@ -108,4 +108,4 @@ stop_server
 log "启动: $MODEL_PATH"
 log "加载中（约 30-60 秒无输出属正常）..."
 exec optiq serve --model "$MODEL_PATH" "${MODEL_ARGS[@]}" \
-  --max-context 32768 --max-concurrent 2 --port $PORT
+  --max-context auto --max-tokens 32768 --max-concurrent 2 --port $PORT
