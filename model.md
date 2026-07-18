@@ -50,6 +50,9 @@ name = "Local OptiQ"
 base_url = "http://127.0.0.1:8080/v1"
 wire_api = "responses"
 requires_openai_auth = false
+request_max_retries = 3
+stream_max_retries = 3
+stream_idle_timeout_ms = 900000
 EOF
 
 cat ~/.codex/config.toml    # 亲眼确认内容写进去了
