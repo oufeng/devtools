@@ -19,9 +19,13 @@ case "$1" in
   35b) optiq serve --model ~/Developer/models/Qwen3.6-35B-A3B-OptiQ-4bit \
         --mtp --kv-config ~/Developer/models/kv/qwen36_35b/kv_config.json \
         --max-context auto --max-concurrent 8 --port 8080 ;;
-  gemma) optiq serve --model ~/Developer/models/gemma-4-31B-it-OptiQ-4bit \
-        --drafter mlx-community/gemma-4-31B-it-assistant-bf16 \
-        --kv-config ~/Developer/models/gemma-4-31B-it-OptiQ-4bit/kv_config.json \
+#   gemma) optiq serve --model ~/Developer/models/gemma-4-31B-it-OptiQ-4bit \
+#         --drafter mlx-community/gemma-4-31B-it-assistant-bf16 \
+#         --kv-config ~/Developer/models/gemma-4-31B-it-OptiQ-4bit/kv_config.json \
+#         --max-context auto --port 8080 ;;
+  gemma) optiq serve --model mlx-community/gemma-4-31B-it-qat-OptiQ-4bit \
+        --drafter google/gemma-4-31B-it-qat-q4_0-unquantized-assistant
+        --kv-config ~/Developer/models/gemma-4-31B-it-qat-OptiQ-4bit/kv_config.json \
         --max-context auto --port 8080 ;;
   *) echo "用法: $0 {27b|35b|gemma}"; exit 1 ;;
 esac
