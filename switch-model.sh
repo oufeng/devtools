@@ -23,7 +23,7 @@ case "$1" in
 #         --drafter mlx-community/gemma-4-31B-it-assistant-bf16 \
 #         --kv-config ~/Developer/models/gemma-4-31B-it-OptiQ-4bit/kv_config.json \
 #         --max-context auto --port 8080 ;;
-  gemma) optiq serve --model mlx-community/gemma-4-31B-it-qat-OptiQ-4bit \
+  gemma) optiq serve --model ~/Developer/models/gemma-4-31B-it-qat-OptiQ-4bit \
         --drafter google/gemma-4-31B-it-qat-q4_0-unquantized-assistant
         --kv-config ~/Developer/models/gemma-4-31B-it-qat-OptiQ-4bit/kv_config.json \
         --max-context auto --port 8080 ;;
