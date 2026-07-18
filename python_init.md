@@ -36,37 +36,48 @@ uv python uninstall 3.12
 
 > uv 管理的 Python 统一存放在 `~/.local/share/uv/python/`，与 macOS 系统自带的 `/usr/bin/python3` 完全隔离，互不影响。
 
-## 第四步：创建虚拟环境（项目隔离）
+## 第四步：创建项目（推荐工作流）
+
+uv 推荐使用 `pyproject.toml` 管理依赖，无需手动创建和激活虚拟环境。
 
 ```bash
-# 在项目目录下创建独立环境（默认用最新安装的版本）
-uv venv myenv
+# 初始化新项目（自动生成 pyproject.toml）
+uv init my-project
 
-# 也可指定 Python 版本
+# 进入项目目录
+cd my-project
+
+# 添加依赖（uv 会自动创建并管理 .venv）
+uv add requests
+
+# 查看已安装的包
+uv pip list
+
+# 运行脚本（自动激活虚拟环境，无需手动 source）
+uv run python main.py
+```
+
+> `uv run` 是核心用法——它会在合适的虚拟环境中执行命令，省去了手动 `source venv/bin/activate` 的步骤。
+
+### 传统 venv 方式（仍可用）
+
+如果你更习惯手动管理虚拟环境：
+
+```bash
+# 创建虚拟环境
 uv venv myenv --python 3.12
 
 # 激活环境
 source myenv/bin/activate
 
+# 安装包
+uv pip install requests
+
 # 退出环境
 deactivate
 ```
 
-> 激活后终端提示符前会出现 `(myenv)` 字样。删除环境 = 直接删除文件夹：`rm -rf myenv`。
-
-## 第五步：安装与管理包（替代 pip）
-
-⚠️ 以下命令都需**先激活虚拟环境**再执行——uv 故意禁止往系统 Python 里装包，这是保护机制。
-
-```bash
-uv pip install requests        # 装包
-uv pip list                    # 查看已安装的包
-uv pip show requests           # 查看某个包的详情
-uv pip install -U requests     # 升级包
-uv pip uninstall requests      # 卸包
-```
-
-## 日常维护
+## 第五步：日常维护
 
 ```bash
 uv self update     # 升级 uv 自身
@@ -80,8 +91,8 @@ uv cache clean     # 清理下载缓存（缓存可能长到几 GB，建议定�
 | 安装 Python 版本 | `pyenv install 3.12` | `uv python install 3.12` |
 | 切换/查看版本 | `pyenv global` / `pyenv versions` | `uv python list`（按环境指定，无需全局切换） |
 | 创建虚拟环境 | `python -m venv myenv` | `uv venv myenv` |
-| 安装包 | `pip install xxx` | `uv pip install xxx` |
-| 查看包列表 | `pip list` | `uv pip list` |
+| 安装包 | `pip install xxx` | `uv add xxx`（推荐）或 `uv pip install xxx` |
+| 运行脚本 | `source venv/bin/activate && python main.py` | `uv run python main.py` |
 | shell 配置 | 需写 3 行到 `~/.zshrc` | **不需要** |
 
 ---

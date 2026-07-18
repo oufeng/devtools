@@ -5,6 +5,7 @@
 #   ./switch-model.sh 27b     # Qwen3.6-27B
 #   ./switch-model.sh 35b     # Qwen3.6-35B-A3B (MoE)
 #   ./switch-model.sh gemma   # Gemma 4 31B (QAT)
+#   ./switch-model.sh status  # 查看当前运行状态
 #
 # 首次使用前，先为两个 Qwen 模型生成 KV cache 配置（各跑一次即可）:
 #   optiq kv-cache ~/Developer/models/Qwen3.6-27B-OptiQ-4bit \
@@ -24,7 +25,28 @@ STOP_TIMEOUT=30   # 等旧服务释放端口的最长秒数
 # ================= 工具函数 =================
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { log "错误: $*"; exit 1; }
-usage() { echo "用法: $0 {27b|35b|gemma}"; exit 1; }
+usage() { echo "用法: $0 {27b|35b|gemma|status}"; exit 1; }
+
+# 查看当前运行状态
+show_status() {
+  if pgrep -f "optiq serve" >/dev/null 2>&1; then
+    local pid
+    pid=$(pgrep -f "optiq serve" | head -1)
+    local cmdline
+    cmdline=$(ps -p "$pid" -o args= 2>/dev/null || echo "<unknown>")
+    log "optiq 正在运行 (PID: $pid)"
+    log "命令: $cmdline"
+    # 尝试从命令行提取模型路径
+    local model_path
+    model_path=$(echo "$cmdline" | awk -F'--model ' '{print $2}' | awk '{print $1}')
+    if [ -n "$model_path" ]; then
+      log "当前模型: $model_path"
+    fi
+  else
+    log "optiq 未运行"
+  fi
+  exit 0
+}
 
 # 停掉旧服务，并等端口真正释放
 stop_server() {
@@ -51,8 +73,13 @@ stop_server() {
 config_qwen() {  # $1=模型目录名  $2=kv 配置目录名
   MODEL_PATH="$MODELS/$1"
   local kv="$KV_DIR/$2/kv_config.json"
-  [ -f "$kv" ] || die "缺少 $kv，先运行脚本头部的 optiq kv-cache 命令"
-  MODEL_ARGS=(--mtp --kv-config "$kv")
+  if [ -f "$kv" ]; then
+    MODEL_ARGS=(--mtp --kv-config "$kv")
+  else
+    log "提示: 未找到 $kv，Qwen 将不使用 KV cache 优化"
+    log "运行脚本头部的 optiq kv-cache 命令可启用"
+    MODEL_ARGS=(--mtp)
+  fi
 }
 
 config_gemma() {
@@ -72,6 +99,7 @@ case "${1:-}" in
   27b)   config_qwen Qwen3.6-27B-OptiQ-4bit     qwen36_27b ;;
   35b)   config_qwen Qwen3.6-35B-A3B-OptiQ-4bit qwen36_35b ;;
   gemma) config_gemma ;;
+  status) show_status ;;
   *)     usage ;;
 esac
 
@@ -80,4 +108,4 @@ stop_server
 log "启动: $MODEL_PATH"
 log "加载中（约 30-60 秒无输出属正常）..."
 exec optiq serve --model "$MODEL_PATH" "${MODEL_ARGS[@]}" \
-  --max-context auto --max-concurrent 8 --port $PORT
+  --max-context 32768 --max-concurrent 2 --port $PORT

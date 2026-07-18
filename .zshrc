@@ -79,6 +79,9 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+# 自动更新（静默后台更新，不打扰）
+zstyle ':omz:update' mode auto
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
