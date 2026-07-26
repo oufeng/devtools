@@ -7,37 +7,45 @@
 #   ./switch-model.sh gemma   # Gemma 4 31B (QAT)
 #   ./switch-model.sh status  # 查看当前运行状态
 #
+# 配置写在 ./config.sh 里，也可通过环境变量覆盖。
+#
 # 首次使用前，先为两个 Qwen 模型生成 KV cache 配置（各跑一次即可）:
-#   optiq kv-cache ~/Developer/models/Qwen3.6-27B-OptiQ-4bit \
-#       --target-bits 5.0 --candidate-bits 4,8 -o ~/Developer/models/kv/qwen36_27b
-#   optiq kv-cache ~/Developer/models/Qwen3.6-35B-A3B-OptiQ-4bit \
-#       --target-bits 5.0 --candidate-bits 4,8 -o ~/Developer/models/kv/qwen36_35b
+#   optiq kv-cache "$MODELS_DIR/$MODEL_27B" \
+#       --target-bits 5.0 --candidate-bits 4,8 -o "$KV_DIR/qwen36_27b"
+#   optiq kv-cache "$MODELS_DIR/$MODEL_35B" \
+#       --target-bits 5.0 --candidate-bits 4,8 -o "$KV_DIR/qwen36_35b"
 
 set -euo pipefail
 
-# ================= 配置区 =================
-MODELS=~/Developer/models
-KV_DIR="$MODELS/kv"
-
-PORT=8080
-STOP_TIMEOUT=30   # 等旧服务释放端口的最长秒数
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=config.sh
+source "$SCRIPT_DIR/config.sh"
 
 # ================= 工具函数 =================
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { log "错误: $*"; exit 1; }
 usage() { echo "用法: $0 {27b|35b|gemma|status}"; exit 1; }
 
+# 尝试自动激活 optiq 所在的虚拟环境
+ensure_optiq() {
+  if command -v optiq >/dev/null 2>&1; then
+    return 0
+  fi
+  if [ -n "${OPTQ_VENV:-}" ] && [ -f "$OPTQ_VENV/bin/activate" ]; then
+    # shellcheck source=/dev/null
+    source "$OPTQ_VENV/bin/activate"
+  fi
+  command -v optiq >/dev/null 2>&1 || die "找不到 optiq，请确认虚拟环境已安装或已在 PATH 中"
+}
+
 # 查看当前运行状态
 show_status() {
   if pgrep -f "optiq serve" >/dev/null 2>&1; then
-    local pid
+    local pid cmdline model_path
     pid=$(pgrep -f "optiq serve" | head -1)
-    local cmdline
     cmdline=$(ps -p "$pid" -o args= 2>/dev/null || echo "<unknown>")
     log "optiq 正在运行 (PID: $pid)"
     log "命令: $cmdline"
-    # 尝试从命令行提取模型路径
-    local model_path
     model_path=$(echo "$cmdline" | awk -F'--model ' '{print $2}' | awk '{print $1}')
     if [ -n "$model_path" ]; then
       log "当前模型: $model_path"
@@ -54,10 +62,10 @@ stop_server() {
   pkill -f "optiq serve" 2>/dev/null || true
 
   local waited=0
-  while lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; do
+  while lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; do
     sleep 1; ((++waited))
     if ((waited >= STOP_TIMEOUT)); then
-      lsof -nP -iTCP:$PORT -sTCP:LISTEN
+      lsof -nP -iTCP:"$PORT" -sTCP:LISTEN || true
       die "端口 $PORT 等了 ${STOP_TIMEOUT}s 仍被占用（占用进程见上方）"
     fi
   done
@@ -69,9 +77,8 @@ stop_server() {
 #   MODEL_PATH — 模型目录
 #   MODEL_ARGS — 传给 optiq serve 的额外参数（数组）
 
-# 两个 Qwen 模型逻辑相同，共用一个函数
 config_qwen() {  # $1=模型目录名  $2=kv 配置目录名
-  MODEL_PATH="$MODELS/$1"
+  MODEL_PATH="$MODELS_DIR/$1"
   local kv="$KV_DIR/$2/kv_config.json"
   if [ -f "$kv" ]; then
     MODEL_ARGS=(--mtp --kv-config "$kv")
@@ -83,7 +90,7 @@ config_qwen() {  # $1=模型目录名  $2=kv 配置目录名
 }
 
 config_gemma() {
-  MODEL_PATH="$MODELS/gemma-4-31B-it-qat-OptiQ-4bit"
+  MODEL_PATH="$MODELS_DIR/$MODEL_GEMMA"
   MODEL_ARGS=(--drafter google/gemma-4-31B-it-qat-q4_0-unquantized-assistant)
 
   local kv="$KV_DIR/gemma4_31b_qat/kv_config.json"
@@ -95,17 +102,21 @@ config_gemma() {
 }
 
 # ================= 主流程 =================
+ensure_optiq
+
 case "${1:-}" in
-  27b)   config_qwen Qwen3.6-27B-OptiQ-4bit     qwen36_27b ;;
-  35b)   config_qwen Qwen3.6-35B-A3B-OptiQ-4bit qwen36_35b ;;
+  27b)   config_qwen "$MODEL_27B" qwen36_27b ;;
+  35b)   config_qwen "$MODEL_35B" qwen36_35b ;;
   gemma) config_gemma ;;
   status) show_status ;;
   *)     usage ;;
 esac
+
+[ -d "$MODEL_PATH" ] || die "模型目录不存在: $MODEL_PATH"
 
 stop_server
 
 log "启动: $MODEL_PATH"
 log "加载中（约 30-60 秒无输出属正常）..."
 exec optiq serve --model "$MODEL_PATH" "${MODEL_ARGS[@]}" \
-  --max-context auto --max-tokens 32768 --max-concurrent 2 --port $PORT
+  --max-context auto --max-tokens 32768 --max-concurrent 2 --port "$PORT"

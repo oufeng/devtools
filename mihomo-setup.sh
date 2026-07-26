@@ -16,6 +16,39 @@ MIRRORS=(
   "https://github.com"
 )
 
+# 获取当前有 IP 的网络服务列表（支持 Wi-Fi / 有线 / 热点等多种场景）
+get_active_network_services() {
+  networksetup -listallnetworkservices 2>/dev/null | tail -n +2 | while read -r service; do
+    [ -z "$service" ] && continue
+    # 跳过被禁用/带 * 标记的服务
+    [[ "$service" == \** ]] && continue
+    networksetup -getinfo "$service" 2>/dev/null | grep -qE 'IP address: ([0-9]+\.){3}[0-9]+' && echo "$service"
+  done
+}
+
+set_all_proxies() {
+  local host="$1" port="$2" state="$3" services svc
+  services=$(get_active_network_services)
+  if [ -z "$services" ]; then
+    echo "⚠️  未检测到活跃网络服务，跳过系统代理设置"
+    return 1
+  fi
+  while IFS= read -r svc; do
+    [ -z "$svc" ] && continue
+    if [ "$state" = "on" ]; then
+      echo "  设置代理: $svc"
+      networksetup -setwebproxy "$svc" "$host" "$port" 2>/dev/null || true
+      networksetup -setsecurewebproxy "$svc" "$host" "$port" 2>/dev/null || true
+      networksetup -setsocksfirewallproxy "$svc" "$host" "$port" 2>/dev/null || true
+    else
+      echo "  关闭代理: $svc"
+      networksetup -setwebproxystate "$svc" off 2>/dev/null || true
+      networksetup -setsecurewebproxystate "$svc" off 2>/dev/null || true
+      networksetup -setsocksfirewallproxystate "$svc" off 2>/dev/null || true
+    fi
+  done <<< "$services"
+}
+
 fetch_gh() { # $1=GitHub路径 $2=保存路径；按顺序轮换镜像
   local base
   for base in "${MIRRORS[@]}"; do
@@ -118,9 +151,7 @@ EOF
 launchctl load "$PLIST"
 
 echo "==> 6/8 设置系统代理（持久生效）"
-networksetup -setwebproxy "Wi-Fi" 127.0.0.1 7890
-networksetup -setsecurewebproxy "Wi-Fi" 127.0.0.1 7890
-networksetup -setsocksfirewallproxy "Wi-Fi" 127.0.0.1 7890
+set_all_proxies 127.0.0.1 7890 on
 
 echo "==> 7/8 写入订阅更新脚本"
 cat > "$DIR/update-sub.sh" << UPD
@@ -157,6 +188,6 @@ echo "  面板地址        http://127.0.0.1:9090/ui"
 echo "  更新订阅        $DIR/update-sub.sh"
 echo "  临时绕过代理    面板里把模式从「规则」切到「直连」"
 echo "  彻底停用        launchctl unload \"$PLIST\""
-echo "                  networksetup -setwebproxystate Wi-Fi off"
-echo "                  networksetup -setsecurewebproxystate Wi-Fi off"
-echo "                  networksetup -setsocksfirewallproxystate Wi-Fi off"
+echo "                  networksetup -listallnetworkservices | tail -n +2 | xargs -I{} networksetup -setwebproxystate '{}' off"
+echo "                  networksetup -listallnetworkservices | tail -n +2 | xargs -I{} networksetup -setsecurewebproxystate '{}' off"
+echo "                  networksetup -listallnetworkservices | tail -n +2 | xargs -I{} networksetup -setsocksfirewallproxystate '{}' off"
