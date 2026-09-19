@@ -33,8 +33,15 @@ venv/
 # Node
 node_modules/
 
-# mattpocock skills clone (tracked via mattpocock-revision.txt)
+# skills 上游 clone (gitignored; 版本由 *-revision.txt 记录进 git)
 skills/mattpocock/
+skills/anthropics/skills/
+skills/addyosmani/agent-skills/
+skills/nextlevelbuilder/ui-ux-pro-max-skill/
+skills/JuliusBrussee/caveman/
+skills/Leonxlnx/taste-skill/
+skills/tt-a1i/archify/
+skills/blader/humanizer/
 
 # local issue tracker working files (offline, not pushed)
 .scratch/
