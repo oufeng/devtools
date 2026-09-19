@@ -72,3 +72,15 @@ name = "Kimi"
 base_url = "https://api.kimi.com/coding/v1"
 env_key = "KIMI_API_KEY"
 wire_api = "responses"
+
+# ── 内置插件开关 ──────────────────────────
+# bundled 办公/可视化插件全部禁用：与已砍掉的 office 类 skill 重复，
+# 其 skill 描述（共 ~2KB）挤占 skills context budget 触发截断预警
+[plugins]
+"template-creator@openai-primary-runtime" = { enabled = false }
+"spreadsheets@openai-primary-runtime"     = { enabled = false }
+"pdf@openai-primary-runtime"              = { enabled = false }
+"presentations@openai-primary-runtime"    = { enabled = false }
+"documents@openai-primary-runtime"        = { enabled = false }
+"visualize@openai-bundled"                = { enabled = false }
+"browser@openai-bundled"                  = { enabled = false }
