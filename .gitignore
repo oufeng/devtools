@@ -35,3 +35,6 @@ node_modules/
 
 # mattpocock skills clone (tracked via mattpocock-revision.txt)
 skills/mattpocock/
+
+# local issue tracker working files (offline, not pushed)
+.scratch/
