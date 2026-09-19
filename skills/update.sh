@@ -11,7 +11,8 @@ REPOS=(
   # 砍 2026-09-20: mattpocock 改 only, 只留高频; grill-with-docs/improve-codebase-architecture 入口砍掉, domain-modeling 保留 (本 repo docs/agents/domain.md 引用)
   "mattpocock|skills/engineering skills/productivity|only|grilling code-review diagnosing-bugs tdd research writing-for-agents wizard domain-modeling"
   # 砍 2026-09-20: office 四件套 + 视觉创作 7 个 + academy-guide (Claude 教程, Codex 无用)
-  "anthropics/skills|skills|except|skill-creator docx pdf pptx xlsx canvas-design brand-guidelines theme-factory algorithmic-art slack-gif-creator web-artifacts-builder frontend-design academy-guide"
+  # 砍 2026-09-20 第二轮: claude-api / discernment-nudge 描述各超 1KB, 触发 codex 截断预警
+  "anthropics/skills|skills|except|skill-creator docx pdf pptx xlsx canvas-design brand-guidelines theme-factory algorithmic-art slack-gif-creator web-artifacts-builder frontend-design academy-guide claude-api discernment-nudge"
   # 砍 2026-09-20: 去掉 3 个流程类 (constraint/context/doubt), 保留实操向
   "addyosmani/agent-skills|skills|only|api-and-interface-design browser-testing-with-devtools ci-cd-and-automation code-simplification deprecation-and-migration documentation-and-adrs frontend-ui-engineering git-workflow-and-versioning incremental-implementation observability-and-instrumentation performance-optimization security-and-hardening shipping-and-launch source-driven-development"
   # "nextlevelbuilder/ui-ux-pro-max-skill|.claude/skills|all|"  # 砍 2026-09-19: 与 taste-skill 重叠, 不做 UI; 恢复去掉行首注释
