@@ -1,19 +1,17 @@
 #!/bin/bash
-# switch-model.sh — 一键切换本地 optiq 模型服务
+# switch-model.sh — 本地 oMLX 模型服务管理
 #
 # 用法:
-#   ./switch-model.sh 27b     # Qwen3.6-27B
-#   ./switch-model.sh 35b     # Qwen3.6-35B-A3B (MoE)
-#   ./switch-model.sh gemma   # Gemma 4 31B (QAT)
-#   ./switch-model.sh status  # 查看当前运行状态
+#   ./switch-model.sh oq4e     # Qwen3.8-27B-oQ4e-mtp (OptiQ 4bit + MTP，快)
+#   ./switch-model.sh 8bit     # Qwen3.8-27B-8bit (8bit 高精度)
+#   ./switch-model.sh status   # 查看当前运行状态
+#   ./switch-model.sh list     # 列出服务已加载的模型
+#   ./switch-model.sh start|stop|restart
+#
+# 说明: oMLX 是多模型服务 —— 一个后台服务托管 MODELS_DIR 下全部模型
+# (LRU 内存管理)，切换模型不需要重启服务，只需更新客户端使用的 model。
 #
 # 配置写在 ./config.sh 里，也可通过环境变量覆盖。
-#
-# 首次使用前，先为两个 Qwen 模型生成 KV cache 配置（各跑一次即可）:
-#   optiq kv-cache "$MODELS_DIR/$MODEL_27B" \
-#       --target-bits 5.0 --candidate-bits 4,8 -o "$KV_DIR/qwen36_27b"
-#   optiq kv-cache "$MODELS_DIR/$MODEL_35B" \
-#       --target-bits 5.0 --candidate-bits 4,8 -o "$KV_DIR/qwen36_35b"
 
 set -euo pipefail
 
@@ -21,102 +19,89 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=config.sh
 source "$SCRIPT_DIR/config.sh"
 
-# ================= 工具函数 =================
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { log "错误: $*"; exit 1; }
-usage() { echo "用法: $0 {27b|35b|gemma|status}"; exit 1; }
+usage() { echo "用法: $0 {oq4e|8bit|status|list|start|stop|restart}"; exit 1; }
 
-# 尝试自动激活 optiq 所在的虚拟环境
-ensure_optiq() {
-  if command -v optiq >/dev/null 2>&1; then
-    return 0
-  fi
-  if [ -n "${OPTQ_VENV:-}" ] && [ -f "$OPTQ_VENV/bin/activate" ]; then
-    # shellcheck source=/dev/null
-    source "$OPTQ_VENV/bin/activate"
-  fi
-  command -v optiq >/dev/null 2>&1 || die "找不到 optiq，请确认虚拟环境已安装或已在 PATH 中"
+# 别名 → model_id
+alias_to_model() {
+  case "$1" in
+    oq4e) echo "$MODEL_OQ4E" ;;
+    8bit) echo "$MODEL_8BIT" ;;
+    *) return 1 ;;
+  esac
 }
 
-# 查看当前运行状态
+codex_current_model() {
+  [ -f "$CODEX_CONFIG" ] || return 0
+  sed -n 's/^model = "\(.*\)"/\1/p' "$CODEX_CONFIG" | head -1
+}
+
 show_status() {
-  if pgrep -f "optiq serve" >/dev/null 2>&1; then
-    local pid cmdline model_path
-    pid=$(pgrep -f "optiq serve" | head -1)
-    cmdline=$(ps -p "$pid" -o args= 2>/dev/null || echo "<unknown>")
-    log "optiq 正在运行 (PID: $pid)"
-    log "命令: $cmdline"
-    model_path=$(echo "$cmdline" | awk -F'--model ' '{print $2}' | awk '{print $1}')
-    if [ -n "$model_path" ]; then
-      log "当前模型: $model_path"
-    fi
+  echo "───────────────"
+  if omlx_up; then
+    echo " oMLX 服务: 🟢 http://${OMLX_HOST}:${OMLX_PORT}（多模型 LRU）"
+    echo " 已加载模型:"
+    omlx_model_ids | sed 's/^/   - /' || echo "   (获取失败)"
   else
-    log "optiq 未运行"
+    echo " oMLX 服务: ⚪ 未运行"
   fi
+  local m; m=$(codex_current_model)
+  echo " Codex CLI:  model = ${m:-<未配置>}  ($CODEX_CONFIG)"
+  echo "───────────────"
   exit 0
 }
 
-# 停掉旧服务，并等端口真正释放
-stop_server() {
-  log "停止旧服务..."
-  pkill -f "optiq serve" 2>/dev/null || true
-
+ensure_server() {
+  if omlx_up; then return 0; fi
+  log "oMLX 服务未运行，正在启动..."
+  omlx start || die "omlx start 失败，检查 oMLX app 或日志: $OMLX_LOG"
   local waited=0
-  while lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; do
+  while ! omlx_up; do
     sleep 1; ((++waited))
     if ((waited >= STOP_TIMEOUT)); then
-      lsof -nP -iTCP:"$PORT" -sTCP:LISTEN || true
-      die "端口 $PORT 等了 ${STOP_TIMEOUT}s 仍被占用（占用进程见上方）"
+      die "服务 ${STOP_TIMEOUT}s 内未就绪，查看 $OMLX_LOG"
     fi
   done
-  log "端口 $PORT 已释放"
+  log "oMLX 服务就绪 (端口 $OMLX_PORT)"
 }
 
-# ================= 模型定义 =================
-# 每个配置函数负责设置两个全局变量：
-#   MODEL_PATH — 模型目录
-#   MODEL_ARGS — 传给 optiq serve 的额外参数（数组）
+switch_model() {
+  local alias="$1" model_id
+  model_id=$(alias_to_model "$alias") || die "未知模型: $alias（可选: oq4e 8bit）"
+  ensure_server
 
-config_qwen() {  # $1=模型目录名  $2=kv 配置目录名
-  MODEL_PATH="$MODELS_DIR/$1"
-  local kv="$KV_DIR/$2/kv_config.json"
-  if [ -f "$kv" ]; then
-    MODEL_ARGS=(--mtp --kv-config "$kv")
-  else
-    log "提示: 未找到 $kv，Qwen 将不使用 KV cache 优化"
-    log "运行脚本头部的 optiq kv-cache 命令可启用"
-    MODEL_ARGS=(--mtp)
+  if ! omlx_model_ids | grep -qx "$model_id"; then
+    die "服务里没有模型 $model_id，确认 $MODELS_DIR/$model_id 目录存在且完整"
   fi
-}
 
-config_gemma() {
-  MODEL_PATH="$MODELS_DIR/$MODEL_GEMMA"
-  MODEL_ARGS=(--drafter google/gemma-4-31B-it-qat-q4_0-unquantized-assistant)
-
-  local kv="$KV_DIR/gemma4_31b_qat/kv_config.json"
-  if [ -f "$kv" ]; then
-    MODEL_ARGS+=(--kv-config "$kv")
+  if [ -f "$CODEX_CONFIG" ]; then
+    local current; current=$(codex_current_model)
+    if [ "$current" = "$model_id" ]; then
+      log "Codex 已在使用 $model_id，无需修改"
+    else
+      sed -i '' "s|^model = .*|model = \"$model_id\"|" "$CODEX_CONFIG"
+      log "Codex 默认模型: ${current:-<无>} → $model_id"
+    fi
   else
-    log "提示: 未找到 kv_config，Gemma 将使用 fp16 KV"
+    log "未找到 $CODEX_CONFIG，跳过 Codex 更新"
   fi
-}
 
-# ================= 主流程 =================
-ensure_optiq
+  echo ""
+  echo "🎉 就绪。新开会话的 codex 即生效；其他客户端:"
+  echo "   omlx launch claude --model $model_id   # Claude Code（无需 CCR）"
+  echo "   omlx launch hermes --model $model_id   # Hermes agent"
+  exit 0
+}
 
 case "${1:-}" in
-  27b)   config_qwen "$MODEL_27B" qwen36_27b ;;
-  35b)   config_qwen "$MODEL_35B" qwen36_35b ;;
-  gemma) config_gemma ;;
-  status) show_status ;;
-  *)     usage ;;
+  oq4e|8bit) switch_model "$1" ;;
+  status)    show_status ;;
+  list)
+    if omlx_up; then omlx_model_ids; else echo "oMLX 服务未运行"; fi
+    exit 0 ;;
+  start)     omlx start; exit 0 ;;
+  stop)      omlx stop; exit 0 ;;
+  restart)   omlx restart; exit 0 ;;
+  *)         usage ;;
 esac
-
-[ -d "$MODEL_PATH" ] || die "模型目录不存在: $MODEL_PATH"
-
-stop_server
-
-log "启动: $MODEL_PATH"
-log "加载中（约 30-60 秒无输出属正常）..."
-exec optiq serve --model "$MODEL_PATH" "${MODEL_ARGS[@]}" \
-  --max-context auto --max-tokens 32768 --max-concurrent 2 --port "$PORT"

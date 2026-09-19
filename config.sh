@@ -1,39 +1,53 @@
 #!/bin/bash
-# config.sh — 本地开发工具集共享配置
+# config.sh — 本地开发工具集共享配置（oMLX 版）
 # 用法: source "$(dirname "$0")/config.sh"
 #
 # 所有值都可通过环境变量覆盖，例如：
-#   MODELS_DIR=/opt/models ./switch-model.sh 27b
+#   OMLX_PORT=9000 ./switch-model.sh status
 
-# 模型与 KV cache 根目录
+# oMLX 服务（托管后台服务，主配置在 ~/.omlx/settings.json）
+: "${OMLX_HOST:=127.0.0.1}"
+: "${OMLX_PORT:=8000}"
+: "${OMLX_SETTINGS:="$HOME/.omlx/settings.json"}"
+: "${OMLX_LOG:="$HOME/.omlx/logs/server.log"}"
+
+# 模型存放目录（settings.json 的 model_dirs，子目录名 = model_id）
 : "${MODELS_DIR:="$HOME/Developer/models"}"
-: "${KV_DIR:="${MODELS_DIR}/kv"}"
 
-# optiq 服务端口
-: "${PORT:=8080}"
-
-: "${CCR_PORT:=3456}"
-
-
-# 日志目录
-: "${LOG_DIR:="$HOME/ai-logs"}"
-
-# 自动激活 optiq 的 Python 虚拟环境路径（空字符串表示不自动激活）
-: "${OPTQ_VENV:="$HOME/.venvs/mlx"}"
-
-# 等待旧服务释放端口的最长秒数
+# 等待服务就绪/释放端口的最长秒数
 : "${STOP_TIMEOUT:=30}"
 
-# Claude Code 环境
-: "${ANTHROPIC_BASE_URL:="http://127.0.0.1:${PORT}"}"
-: "${ANTHROPIC_AUTH_TOKEN:="sk-optiq-local"}"
-: "${ANTHROPIC_MODEL:="qwen3.6-27b"}"
-: "${ANTHROPIC_SMALL_FAST_MODEL:="qwen3.6-27b"}"
-: "${API_TIMEOUT_MS:=900000}"
-: "${CLAUDE_CODE_MAX_OUTPUT_TOKENS:=32768}"
+# 模型清单（别名 → 模型目录名 = omlx model_id）
+: "${MODEL_OQ4E:=Qwen3.8-27B-oQ4e-mtp}"
+: "${MODEL_8BIT:=Qwen3.8-27B-8bit}"
 
-# 模型清单（别名 → 目录名）
-# 目录名会拼接在 MODELS_DIR 后面
-: "${MODEL_27B:=Qwen3.6-27B-OptiQ-4bit}"
-: "${MODEL_35B:=Qwen3.6-35B-A3B-OptiQ-4bit}"
-: "${MODEL_GEMMA:=gemma-4-31B-it-qat-OptiQ-4bit}"
+# Codex CLI 配置（switch-model.sh 会更新其中的 model 行）
+: "${CODEX_CONFIG:="$HOME/.codex/config.toml"}"
+
+# ---------- oMLX 辅助函数（各脚本共享） ----------
+
+# 从 settings.json 读取 API key
+omlx_api_key() {
+  python3 -c 'import json,sys
+try:
+    print(json.load(open(sys.argv[1])).get("auth", {}).get("api_key", ""))
+except Exception:
+    pass' "$OMLX_SETTINGS" 2>/dev/null
+}
+
+# 服务是否存活（/v1/models 能通即存活）
+omlx_up() {
+  curl -s -o /dev/null --connect-timeout 2 \
+    -H "Authorization: Bearer $(omlx_api_key)" \
+    "http://${OMLX_HOST}:${OMLX_PORT}/v1/models"
+}
+
+# 已加载模型 id 列表（每行一个）
+omlx_model_ids() {
+  omlx_up || return 1
+  curl -s -H "Authorization: Bearer $(omlx_api_key)" \
+    "http://${OMLX_HOST}:${OMLX_PORT}/v1/models" \
+    | python3 -c 'import json,sys
+for m in json.load(sys.stdin).get("data", []):
+    print(m["id"])' 2>/dev/null
+}

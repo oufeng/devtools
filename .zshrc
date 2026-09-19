@@ -124,6 +124,11 @@ alias py='python3'
 alias pip='uv pip'
 alias venv='uv venv'
 
+# oMLX 本地模型服务
+alias ostart='omlx start'
+alias ostop='omlx stop'
+alias olog='tail -f ~/.omlx/logs/server.log'
+
 # Git 别名（与 oh-my-zsh git 插件互补）
 alias g='git'
 alias gst='git status'
