@@ -32,3 +32,6 @@ venv/
 
 # Node
 node_modules/
+
+# mattpocock skills clone (tracked via mattpocock-revision.txt)
+skills/mattpocock/
