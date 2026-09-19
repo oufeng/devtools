@@ -11,10 +11,10 @@ REPOS=(
   "mattpocock|skills/engineering skills/productivity|all|"
   "anthropics/skills|skills|except|skill-creator"
   "addyosmani/agent-skills|skills|only|api-and-interface-design browser-testing-with-devtools ci-cd-and-automation code-simplification constraint-driven-development context-engineering deprecation-and-migration documentation-and-adrs doubt-driven-development frontend-ui-engineering git-workflow-and-versioning incremental-implementation observability-and-instrumentation performance-optimization security-and-hardening shipping-and-launch source-driven-development"
-  "nextlevelbuilder/ui-ux-pro-max-skill|.claude/skills|all|"
+  # "nextlevelbuilder/ui-ux-pro-max-skill|.claude/skills|all|"  # 砍 2026-09-19: 与 taste-skill 重叠, 不做 UI; 恢复去掉行首注释
   "JuliusBrussee/caveman|skills|only|caveman cavecrew caveman-commit caveman-compress caveman-explore caveman-help caveman-review investigate-first lean-build migration safe-refactor surgical-patch verify-and-stop"
-  "Leonxlnx/taste-skill|skills|except|taste-skill-v1"
-  "tt-a1i/archify|archify .agents/skills/archify-review|all|"
+  "Leonxlnx/taste-skill|skills|only|output-skill"  # 2026-09-19: 只留 output-skill (本地 27B 防截断)
+  # "tt-a1i/archify|archify .agents/skills/archify-review|all|"  # 砍 2026-09-19: 小众; 恢复去掉行首注释
   "blader/humanizer|.|all|"
 )
 
