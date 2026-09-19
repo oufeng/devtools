@@ -84,74 +84,17 @@ zstyle ':omz:update' mode auto
 
 # User configuration
 
-# 编译缓存目录（uv / Python 等工具会用到）
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+# export MANPATH="/usr/local/man:$MANPATH"
 
-# Homebrew（Apple Silicon）
-if [ -d /opt/homebrew/bin ]; then
-  export PATH="/opt/homebrew/bin:$PATH"
-fi
-# Homebrew（Intel）
-if [ -d /usr/local/bin ]; then
-  export PATH="/usr/local/bin:$PATH"
-fi
+# You may need to manually set your language environment
+# export LANG=en_US.UTF-8
 
-# 本地脚本 / 工具
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/Developer/devtools:$PATH"
-
-# uv: 自动补全（uv 1.0+ 支持）
-if command -v uv >/dev/null 2>&1; then
-  eval "$(uv generate-shell-completion zsh)" 2>/dev/null || true
-fi
-
-# 常用别名
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ll='ls -alh'
-alias la='ls -A'
-alias lt='ls -alht'
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-
-# 开发相关
-alias c='claude'
-alias cc='claude code'
-alias ccd='claude code --dangerously-skip-permissions'
-alias cls='clear'
-alias py='python3'
-alias pip='uv pip'
-alias venv='uv venv'
-
-# oMLX 本地模型服务
-alias ostart='omlx start'
-alias ostop='omlx stop'
-alias olog='tail -f ~/.omlx/logs/server.log'
-
-# Git 别名（与 oh-my-zsh git 插件互补）
-alias g='git'
-alias gst='git status'
-alias gp='git pull'
-alias gP='git push'
-alias gco='git checkout'
-alias gcm='git commit -m'
-alias gca='git commit --amend'
-alias gd='git diff'
-alias gds='git diff --staged'
-
-# 快速目录
-alias dl='cd ~/Downloads'
-alias dt='cd ~/Desktop'
-alias dev='cd ~/Developer'
-
-# 环境变量
-export EDITOR='vim'
-export LANG='zh_CN.UTF-8'
-export LC_ALL='zh_CN.UTF-8'
-
-# 让 gpg / ssh agent 等正常读取
-export GPG_TTY=$(tty)
+# Preferred editor for local and remote sessions
+# if [[ -n $SSH_CONNECTION ]]; then
+#   export EDITOR='vim'
+# else
+#   export EDITOR='nvim'
+# fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
@@ -167,3 +110,22 @@ export GPG_TTY=$(tty)
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+export PATH="$HOME/.local/bin:$PATH"
+
+# OpenClaw Completion
+[ -f "/Users/jeff/.openclaw/completions/openclaw.zsh" ] && source "/Users/jeff/.openclaw/completions/openclaw.zsh"
+
+# opencode
+export PATH=/Users/jeff/.opencode/bin:$PATH
+
+# ── 终端代理（mihomo 混合端口 7890；供 Codex 等终端应用使用）──
+export HTTP_PROXY=http://127.0.0.1:7890
+export HTTPS_PROXY=http://127.0.0.1:7890
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
+export NO_PROXY=localhost,127.0.0.1
+export no_proxy=localhost,127.0.0.1
