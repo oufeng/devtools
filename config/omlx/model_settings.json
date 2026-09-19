@@ -52,7 +52,7 @@
       "enable_thinking": true,
       "qwen4_ple_ssd_offload": false,
       "thinking_budget_enabled": true,
-      "thinking_budget_tokens": 8192,
+      "thinking_budget_tokens": 4096,
       "guided_grammar_enabled": false,
       "turboquant_kv_enabled": true,
       "turboquant_kv_bits": 4,

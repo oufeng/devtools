@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "templates": {
+    "qwen3": {
+      "name": "qwen3",
+      "display_name": "qwen3",
+      "description": null,
+      "created_at": "2026-09-13T04:03:14.245639+00:00",
+      "updated_at": "2026-09-13T04:13:10.615766+00:00",
+      "settings": {
+        "thinking_budget_tokens": 8192,
+        "force_sampling": false,
+        "max_tool_result_tokens": 0,
+        "thinking_budget_enabled": true,
+        "enable_thinking": true
+      }
+    },
+    "qwen3_8_27b_8bit": {
+      "name": "qwen3_8_27b_8bit",
+      "display_name": "qwen3_8_27b_8bit",
+      "description": null,
+      "created_at": "2026-09-13T04:12:06.148183+00:00",
+      "updated_at": "2026-09-13T04:13:35.265277+00:00",
+      "settings": {
+        "max_tool_result_tokens": 0,
+        "thinking_budget_tokens": 8192,
+        "thinking_budget_enabled": true,
+        "force_sampling": false,
+        "enable_thinking": true
+      }
+    },
+    "qwen3_8_27b_oq4e_mtp": {
+      "name": "qwen3_8_27b_oq4e_mtp",
+      "display_name": "qwen3_8_27b_oq4e_mtp",
+      "description": null,
+      "created_at": "2026-09-13T08:17:37.244397+00:00",
+      "updated_at": "2026-09-19T16:40:42.718832+00:00",
+      "settings": {
+        "thinking_budget_tokens": 4096,
+        "thinking_budget_enabled": true,
+        "enable_thinking": true,
+        "max_tool_result_tokens": 0,
+        "force_sampling": false
+      }
+    }
+  }
+}

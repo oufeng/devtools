@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "profiles": {
+    "Qwen3.8-27B-8bit": {
+      "qwen3_8_27b_8bit": {
+        "name": "qwen3_8_27b_8bit",
+        "display_name": "qwen3_8_27b_8bit",
+        "api_name": "qwen3_8_27b_8bit",
+        "description": null,
+        "created_at": "2026-09-13T04:12:06.152468+00:00",
+        "updated_at": "2026-09-13T08:16:23.197074+00:00",
+        "settings": {
+          "max_tool_result_tokens": 0,
+          "thinking_budget_tokens": 8192,
+          "mtp_enabled": false,
+          "thinking_budget_enabled": true,
+          "vlm_mtp_enabled": false,
+          "force_sampling": false,
+          "qwen35_ane_prefill_enabled": false,
+          "dflash_enabled": false,
+          "specprefill_enabled": false,
+          "enable_thinking": true,
+          "turboquant_kv_enabled": false,
+          "guided_grammar_enabled": false,
+          "turboquant_kv_bits": 4.0,
+          "turboquant_skip_last": true,
+          "qwen35_ane_prefill_sequence_length": 2048,
+          "qwen35_ane_prefill_tail_padding_min_tokens": 0,
+          "qwen35_ane_prefill_fraction": 0.53,
+          "qwen35_ane_prefill_fused_down": false,
+          "qwen35_ane_prefill_max_layers": 64,
+          "qwen35_ane_prefill_dual_ane": true,
+          "qwen35_ane_prefill_gdn": true,
+          "qwen35_ane_prefill_gdn_fraction": 0.5,
+          "qwen35_ane_prefill_gdn_max_layers": 48,
+          "qwen35_ane_prefill_cpu_enabled": false,
+          "qwen35_ane_prefill_cpu_fraction": 0.135,
+          "qwen35_ane_prefill_cpu_down_fraction": 0.0,
+          "qwen35_ane_prefill_cpu_gdn_fraction": 0.0,
+          "qwen35_ane_prefill_cpu_threads": 8,
+          "qwen35_ane_prefill_cpu_shared_resource": true,
+          "dflash_draft_quant_enabled": false,
+          "dflash_in_memory_cache": true,
+          "dflash_in_memory_cache_max_entries": 4,
+          "dflash_in_memory_cache_max_bytes": 8589934592,
+          "dflash_ssd_cache": false,
+          "dflash_ssd_cache_max_bytes": 21474836480,
+          "dflash_draft_sink_size": 0
+        },
+        "source_template": "qwen3_8_27b_8bit",
+        "expose_as_model": false
+      }
+    },
+    "Qwen3.8-27B-oQ4e-mtp": {
+      "qwen3_8_27b_oq4e_mtp": {
+        "name": "qwen3_8_27b_oq4e_mtp",
+        "display_name": "qwen3_8_27b_oq4e_mtp",
+        "api_name": "qwen3_8_27b_oq4e_mtp",
+        "description": null,
+        "created_at": "2026-09-13T08:17:37.249913+00:00",
+        "updated_at": "2026-09-19T16:40:42.720271+00:00",
+        "settings": {
+          "mtp_enabled": true,
+          "thinking_budget_tokens": 4096,
+          "qwen35_ane_prefill_enabled": false,
+          "thinking_budget_enabled": true,
+          "enable_thinking": true,
+          "max_tool_result_tokens": 0,
+          "turboquant_kv_enabled": true,
+          "dflash_enabled": false,
+          "force_sampling": false,
+          "vlm_mtp_enabled": false,
+          "specprefill_enabled": false
+        },
+        "source_template": "qwen3_8_27b_oq4e_mtp",
+        "expose_as_model": false
+      }
+    }
+  }
+}

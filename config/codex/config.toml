@@ -15,12 +15,12 @@ model_catalog_json = "/Users/jeff/.codex/omlx-model-catalog.json"
 
 # ── 推理参数 ──────────────────────────────
 model_reasoning_effort = "medium"
-model_context_window = 131072      # 128K：4-bit KV(turboquant) 下峰值 ~30GB，低于 soft 线 37.8GB
+model_context_window = 65536      # 64K：4-bit KV(turboquant) 下峰值内存减半，更稳
 model_max_output_tokens = 8192
 disable_response_storage = true
 
 # ── 自动压缩 ──────────────────────────────
-model_auto_compact_token_limit = 110000   # 128K 窗口下提前压缩，给摘要+响应留 ~18k
+model_auto_compact_token_limit = 55000   # 64K 窗口下提前压缩，给摘要+响应留 ~9k
 model_auto_compact_token_limit_scope = "total"
 
 # 自定义压缩提示词：本地 27B 模型对"保留什么"的遵循度有限，这里写具体
@@ -65,3 +65,10 @@ writable_roots = [
   "/Users/jeff/.cache/uv",
 ]
 network_access = true
+
+# ── Kimi 线上提供方 ──────────────────────
+[model_providers.kimi]
+name = "Kimi"
+base_url = "https://api.kimi.com/coding/v1"
+env_key = "KIMI_API_KEY"
+wire_api = "responses"
