@@ -1,0 +1,48 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "omlx": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "oMLX (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8000/v1",
+        "apiKey": "sk-omlx-Ca11vpMt01dRh5RmQz4oPbwD"
+      },
+      "models": {
+        "Qwen3.8-27B-oQ4e-mtp": {
+          "name": "Qwen3.8 27B oQ4e-MTP",
+          "limit": {
+            "context": 65536,
+            "output": 8192
+          },
+          "variants": {
+            "low": {
+              "reasoningEffort": "low"
+            },
+            "medium": {
+              "reasoningEffort": "medium"
+            },
+            "high": {
+              "reasoningEffort": "high"
+            }
+          }
+        }
+      }
+    }
+  },
+  "model": "omlx/Qwen3.8-27B-oQ4e-mtp",
+  "small_model": "omlx/Qwen3.8-27B-oQ4e-mtp",
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 17536
+  },
+  "permission": {
+    "external_directory": {
+      "~/.codex/**": "allow",
+      "~/.omlx/**": "allow",
+      "~/.venvs/**": "allow",
+      "~/.cache/uv/**": "allow"
+    }
+  }
+}

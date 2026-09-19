@@ -1,0 +1,67 @@
+# ── 模型 ──────────────────────────────────
+model_provider = "omlx"
+model = "Qwen3.8-27B-oQ4e-mtp"
+model_catalog_json = "/Users/jeff/.codex/omlx-model-catalog.json"
+
+# ── 推理参数 ──────────────────────────────
+#model_reasoning_effort = "high"      # 深度任务用 high；日常快速迭代改 medium，速度明显更快
+#model_context_window = 131072        # 128K 起步；模型原生 256K，内存余量够可再上调
+#model_max_output_tokens = 32768
+#disable_response_storage = true      # 本地服务没有服务端状态，必须保留
+
+# ── 自动压缩（compaction）──────────────────────
+#model_auto_compact_token_limit = 110000    # 接近 128K 前触发自动压缩，给摘要生成留余量
+#model_auto_compact_token_limit_scope = "total"  # total | body_after_prefix；total 计整个上下文
+
+# ── 推理参数 ──────────────────────────────
+model_reasoning_effort = "medium"
+model_context_window = 65536
+model_max_output_tokens = 8192
+disable_response_storage = true
+
+# ── 自动压缩 ──────────────────────────────
+model_auto_compact_token_limit = 48000
+model_auto_compact_token_limit_scope = "total"
+
+# 自定义压缩提示词：本地 27B 模型对"保留什么"的遵循度有限，这里写具体
+compact_prompt = """
+You are performing a CONTEXT CHECKPOINT COMPACTION. Create a handoff summary for another LLM that will resume the task.
+
+The summary must let the next agent continue the work without seeing the original conversation. Preserve, in this order:
+
+1. GOAL: the user's original request(s) and any constraints or corrections they added.
+2. DECISIONS: choices already made, with brief rationale, so they are not revisited.
+3. WORK DONE: files created or modified (exact paths), key implementation details, and current verification status (tests run, results, builds).
+4. OPEN ITEMS: unresolved errors, failed attempts and why, and the concrete next steps in order.
+5. USER PREFERENCES: any style, language, or workflow preferences the user expressed.
+
+Rules:
+- Be specific: exact file paths, commands, error messages, and identifiers over vague descriptions.
+- Omit verbose tool output, exploration dead ends, and chit-chat.
+- Keep it under ~2000 tokens when possible.
+- Write the summary in the same language the user has been using.
+"""
+
+# ── oMLX 提供方 ───────────────────────────
+[model_providers.omlx]
+name = "oMLX"
+base_url = "http://127.0.0.1:8000/v1"
+wire_api = "responses"
+experimental_bearer_token = "sk-omlx-Ca11vpMt01dRh5RmQz4oPbwD"
+
+# ── 工作区信任（按你的实际情况保留）─────────
+[projects."/Users/jeff/Developer"]
+trust_level = "trusted"
+
+[projects."/Users/jeff/Developer/devtools"]
+trust_level = "trusted"
+
+# ── 沙箱放宽（方案 B：保留沙箱，放行常用目录 + 沙箱内联网）──
+[sandbox_workspace_write]
+writable_roots = [
+  "/Users/jeff/.codex",
+  "/Users/jeff/.omlx",
+  "/Users/jeff/.venvs",
+  "/Users/jeff/.cache/uv",
+]
+network_access = true
