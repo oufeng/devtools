@@ -1,12 +1,13 @@
 # Agent 配置跟踪
 
-本目录镜像 3 个 coding agent 的生效配置，用于跟踪改动历史（git log 可查每次变更）。
+本目录镜像 3 个 coding agent 和 oMLX 本地服务的生效配置，用于跟踪改动历史（git log 可查每次变更）。
 
 | 文件 | 生效位置 |
 |---|---|
 | `codex/config.toml` | `~/.codex/config.toml` |
 | `opencode/opencode.json` | `~/.config/opencode/opencode.json` |
 | `claude/settings.json` | `~/.claude/settings.json` |
+| `omlx/model_settings.json` | `~/.omlx/model_settings.json` |
 
 ## 同步
 
